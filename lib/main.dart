@@ -33,3 +33,9 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+/**
+ * WARNINGS EN LA PLAY GOOGLE CONSOLE. VER:
+ * https://stackoverflow.com/questions/62568757/playstore-error-app-bundle-contains-native-code-and-youve-not-uploaded-debug#69155101
+ * https://github.com/flutter/flutter/issues/60240
+ */
