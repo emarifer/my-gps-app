@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:geojson/geojson.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/providers.dart';
@@ -24,13 +24,24 @@ class ShowInfoButton extends StatelessWidget {
   }
 
   Widget _buildAlertDialog(BuildContext context) {
+    const String noTrack = 'No hay track cargado';
     final TrackDataProvider trackDataProvider =
         Provider.of<TrackDataProvider>(context);
-    GeoJsonLine? lineProvider = trackDataProvider.lineProvider;
-    String? trackName = trackDataProvider.trackName;
+    List<LatLng> lineProvider = trackDataProvider.lineProvider;
+    String trackName = trackDataProvider.trackName.isNotEmpty
+        ? trackDataProvider.trackName
+        : 'Sin nombre o $noTrack';
+    List<double?> elevations = trackDataProvider.elevations;
+    List<DateTime?> times = trackDataProvider.times;
 
-    final String? pathLength = Utils.calculateDistance(lineProvider);
-    final String? altitude = Utils.maxElevation(lineProvider);
+    final String pathLength = Utils.calculateDistance(lineProvider) ?? noTrack;
+    final List<String> altitude = Utils.maxElevation(elevations) ??
+        [
+          'Sin elevaciones o $noTrack',
+          'Sin elevaciones o $noTrack',
+        ];
+    final String duration =
+        Utils.calculateDuration(times) ?? 'Duración no disponible o $noTrack';
 
     return AlertDialog(
       title: Row(
@@ -40,16 +51,20 @@ class ShowInfoButton extends StatelessWidget {
           Text('Info Track'),
         ],
       ),
-      content: SizedBox(
-        height: trackName != null && trackName.length > 35 ? 150 : 100,
+      // IntrinsicHeight le otorga a la columna la altura de su contenido
+      content: IntrinsicHeight(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('• Nombre: ${trackName ?? "No hay track cargado"}'),
+          children: <Widget>[
+            Text('• Nombre: $trackName'),
             const SizedBox(height: 5),
-            Text('• Distancia: ${pathLength ?? "No hay track cargado"}'),
+            Text('• Distancia: $pathLength'),
             const SizedBox(height: 5),
-            Text('• Máx. Elevación: ${altitude ?? "No hay track cargado"}'),
+            Text('• Máx. Elevación: ${altitude[0]}'),
+            const SizedBox(height: 5),
+            Text('• Min. Elevación: ${altitude[1]}'),
+            const SizedBox(height: 5),
+            Text('• Duración aprox.: $duration'),
           ],
         ),
       ),

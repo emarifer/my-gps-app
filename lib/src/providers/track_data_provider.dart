@@ -1,91 +1,110 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:geojson/geojson.dart';
+import 'package:gpx/gpx.dart';
 import 'package:latlong2/latlong.dart';
 
 class TrackDataProvider extends ChangeNotifier {
   final MapController mapController = MapController();
-  final markers = <Marker>[];
   final lines = <Polyline>[];
+  final markers = <Marker>[];
 
-  GeoJsonLine? lineProvider;
-  String? trackName;
+  String trackName = '';
+  final List<LatLng> lineProvider = [];
+  final List<double?> elevations = [];
+  final List<DateTime?> times = [];
 
-  Future<void> processTrackData(String data) async {
-    // final data = await rootBundle.loadString('assets/tracks.geojson');
-    final geojson = GeoJson();
-    geojson.processedLines.listen((GeoJsonLine line) {
-      lines.add(
-        Polyline(
-          strokeWidth: 4.0,
-          color: Colors.blue.shade700,
-          points: line.geoSerie!.toLatLng(),
-        ),
-      );
+  processTrackData(String data) {
+    final xmlGpx = GpxReader().fromString(data);
+    trackName = xmlGpx.metadata?.name ?? '';
 
-      mapController.move(lines[0].points[0], 14);
-      lineProvider = line;
-      trackName = line.name;
-      notifyListeners();
-    });
-    geojson.endSignal.listen((_) => geojson.dispose());
-    unawaited(geojson.parse(data, verbose: true));
+    final List<Trkseg> trksegs = xmlGpx.trks[0].trksegs;
+
+    if (trksegs.isNotEmpty) {
+      for (var trkseg in trksegs) {
+        final List<LatLng> points = [];
+        final List<Wpt> trkList = trkseg.trkpts;
+
+        for (var trkp in trkList) {
+          points.add(LatLng(trkp.lat!, trkp.lon!));
+          elevations.add(trkp.ele);
+          times.add(trkp.time);
+        }
+
+        // Hay que añadir la lista de punto sin referencia
+        lines.add(
+          Polyline(
+            strokeWidth: 4.0,
+            color: Colors.blue.shade700,
+            points: [...points],
+          ),
+        );
+
+        lineProvider.addAll([...points]);
+        points.clear();
+      }
+    }
   }
 
-  Future<void> processWaypointsData(String data) async {
-    final geojson = GeoJson();
-    geojson.processedPoints.listen((GeoJsonPoint point) {
-      markers.add(
-        Marker(
-          point: LatLng(point.geoPoint.latitude, point.geoPoint.longitude),
-          builder: (_) => Tooltip(
-            message: point.geoPoint.name,
-            child: const Icon(Icons.gps_fixed, color: Colors.red),
-            showDuration: const Duration(seconds: 5),
+  processWaypointsData(String data) {
+    final xmlGpx = GpxReader().fromString(data);
+    // Lista de Waipoints del track
+    List<Wpt> trkWpt = xmlGpx.wpts;
+    // print(trkWpt);
+
+    if (trkWpt.isNotEmpty) {
+      for (var wpt in trkWpt) {
+        markers.add(
+          Marker(
+            point: LatLng(wpt.lat!, wpt.lon!),
+            builder: (_) => Tooltip(
+              message: '${wpt.name} (${wpt.ele} m)',
+              child: const Icon(Icons.gps_fixed, color: Colors.red),
+              showDuration: const Duration(seconds: 5),
+            ),
           ),
-        ),
-      );
-      notifyListeners();
-    });
-    geojson.endSignal.listen((_) => geojson.dispose());
-    unawaited(geojson.parse(data, verbose: true));
+        );
+      }
+    }
   }
 
   Future<void> addTrackToMap() async {
     // Limpiamos los datos anteriores
     markers.clear();
     lines.clear();
-    trackName = null;
-    lineProvider = null;
+    trackName = '';
+    lineProvider.clear();
+    elevations.clear();
+    times.clear();
     notifyListeners();
 
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['js'], // Solo geojson
-    );
-    // print(result?.files.single.path);
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+
     if (result != null) {
       final File file = File(result.files.single.path!);
       String data = await file.readAsString();
-      data = data.replaceAll('MultiLineString', 'LineString');
-      data = data.replaceAll('[[[', '[[');
-      data = data.replaceAll(']]]', ']]');
       // print(data);
-      processWaypointsData(data);
       processTrackData(data);
+      processWaypointsData(data);
+      Future.delayed(const Duration(milliseconds: 300), () {
+        mapController.move(lineProvider[0], 14);
+      });
+      notifyListeners();
     }
   }
 
   void removeDataTrack() {
+    // Limpiamos ldatos
     markers.clear();
     lines.clear();
-    lineProvider = null;
-    trackName = null;
+    trackName = '';
+    lineProvider.clear();
+    elevations.clear();
+    times.clear();
 
     notifyListeners();
   }
