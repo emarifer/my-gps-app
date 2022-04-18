@@ -13,25 +13,23 @@ class CustomActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     bool showRightControls = Provider.of<UIProvider>(context).showRightControls;
+    bool showLeftControls = Provider.of<UIProvider>(context).showLeftControls;
 
     return Stack(
       children: [
         Positioned(
-          top: MediaQuery.of(context).size.height * 0.35,
+          top: MediaQuery.of(context).size.height * 0.08,
           right: 0,
-          child: GestureDetector(
-            onTap: () {
+          child: ElevatedButton(
+            onPressed: () {
               Provider.of<UIProvider>(context, listen: false)
                   .showRightControls = !showRightControls;
             },
-            child: Container(
-              width: 20,
-              height: 40,
-              color: Colors.indigoAccent.shade100,
-              child: showRightControls
-                  ? const Icon(Icons.chevron_right, size: 22)
-                  : const Icon(Icons.chevron_left, size: 22),
-            ),
+            style:
+                ElevatedButton.styleFrom(primary: Colors.indigoAccent.shade100),
+            child: showRightControls
+                ? const Icon(Icons.chevron_right)
+                : const Icon(Icons.chevron_left),
           ),
         ),
         showRightControls
@@ -58,7 +56,42 @@ class CustomActions extends StatelessWidget {
                 right: 0,
                 child: SizedBox(width: 0, height: 0),
               ),
+        Positioned(
+          top: MediaQuery.of(context).size.height * 0.08,
+          left: 30,
+          child: ElevatedButton(
+            onPressed: () {
+              Provider.of<UIProvider>(context, listen: false).showLeftControls =
+                  !showLeftControls;
+            },
+            style:
+                ElevatedButton.styleFrom(primary: Colors.indigoAccent.shade100),
+            child: showLeftControls
+                ? const Icon(Icons.chevron_left)
+                : const Icon(Icons.chevron_right),
+          ),
+        ),
+        showLeftControls
+            ? Positioned(
+                bottom: 20,
+                left: 35,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: const <Widget>[
+                    StartStopTrackRecord(),
+                  ],
+                ),
+              )
+            : const Positioned(
+                bottom: 5,
+                left: 0,
+                child: SizedBox(width: 0, height: 0),
+              ),
       ],
     );
   }
 }
+
+/**
+ * 
+ */

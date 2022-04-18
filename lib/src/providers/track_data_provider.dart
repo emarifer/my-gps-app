@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:gpx/gpx.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:background_location/background_location.dart';
 
 class TrackDataProvider extends ChangeNotifier {
   final MapController mapController = MapController();
@@ -17,6 +18,8 @@ class TrackDataProvider extends ChangeNotifier {
   final List<LatLng> lineProvider = [];
   final List<double?> elevations = [];
   final List<DateTime?> times = [];
+
+  bool onOffTrackRecord = false;
 
   void processTrackData(String data) {
     final xmlGpx = GpxReader().fromString(data);
@@ -74,7 +77,7 @@ class TrackDataProvider extends ChangeNotifier {
 
   Future<void> addTrackToMap() async {
     // Limpiamos los datos anteriores
-    removeDataTrack();
+    // removeDataTrack();
 
     FilePickerResult? result = await FilePicker.platform.pickFiles();
 
@@ -85,7 +88,7 @@ class TrackDataProvider extends ChangeNotifier {
       processTrackData(data);
       processWaypointsData(data);
       Future.delayed(const Duration(milliseconds: 300), () {
-        mapController.move(lineProvider[0], 14);
+        mapController.move(lineProvider[0], 16);
       });
       notifyListeners();
     }
@@ -101,5 +104,43 @@ class TrackDataProvider extends ChangeNotifier {
     trackName = '';
 
     notifyListeners();
+  }
+
+  Future<void> startRecordingPosition() async {
+    List<LatLng> trackSegment = [];
+    List<LatLng> addPoints(Location location) {
+      trackSegment.add(LatLng(location.latitude!, location.longitude!));
+
+      notifyListeners();
+      return trackSegment;
+    }
+
+    if (onOffTrackRecord) {
+      BackgroundLocation.stopLocationService();
+      trackSegment.clear();
+      onOffTrackRecord = false;
+      notifyListeners();
+    } else {
+      await BackgroundLocation.setAndroidNotification(
+        title: 'Sevicio de adquisición de Track iniciando…',
+        message: 'Grabrando Track…',
+        icon: '@mipmap/ic_launcher',
+      );
+
+      await BackgroundLocation.startLocationService(distanceFilter: 5);
+
+      BackgroundLocation.getLocationUpdates((location) {
+        lines.add(
+          Polyline(
+            strokeWidth: 4.0,
+            color: Colors.redAccent,
+            points: addPoints(location),
+          ),
+        );
+      });
+
+      onOffTrackRecord = true;
+      notifyListeners();
+    }
   }
 }

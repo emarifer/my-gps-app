@@ -24,7 +24,7 @@ class StartStopLocationButton extends StatelessWidget {
         child: const Icon(Icons.my_location),
         backgroundColor: onOffLocation ? Colors.pinkAccent : Colors.greenAccent,
         onPressed: () async {
-          await Permission.locationWhenInUse.request();
+          await Permission.locationAlways.request();
           Provider.of<GeolocatorProvider>(context, listen: false)
               .startStopGps();
         },
