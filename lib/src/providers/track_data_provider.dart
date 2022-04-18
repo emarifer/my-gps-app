@@ -18,7 +18,7 @@ class TrackDataProvider extends ChangeNotifier {
   final List<double?> elevations = [];
   final List<DateTime?> times = [];
 
-  processTrackData(String data) {
+  void processTrackData(String data) {
     final xmlGpx = GpxReader().fromString(data);
     trackName = xmlGpx.metadata?.name ?? '';
 
@@ -50,7 +50,7 @@ class TrackDataProvider extends ChangeNotifier {
     }
   }
 
-  processWaypointsData(String data) {
+  void processWaypointsData(String data) {
     final xmlGpx = GpxReader().fromString(data);
     // Lista de Waipoints del track
     List<Wpt> trkWpt = xmlGpx.wpts;
@@ -74,17 +74,11 @@ class TrackDataProvider extends ChangeNotifier {
 
   Future<void> addTrackToMap() async {
     // Limpiamos los datos anteriores
-    markers.clear();
-    lines.clear();
-    trackName = '';
-    lineProvider.clear();
-    elevations.clear();
-    times.clear();
-    notifyListeners();
+    removeDataTrack();
 
     FilePickerResult? result = await FilePicker.platform.pickFiles();
 
-    if (result != null) {
+    if (result != null && result.files.single.path!.contains('.gpx')) {
       final File file = File(result.files.single.path!);
       String data = await file.readAsString();
       // print(data);
@@ -99,12 +93,12 @@ class TrackDataProvider extends ChangeNotifier {
 
   void removeDataTrack() {
     // Limpiamos ldatos
-    markers.clear();
-    lines.clear();
-    trackName = '';
-    lineProvider.clear();
     elevations.clear();
+    lineProvider.clear();
+    lines.clear();
+    markers.clear();
     times.clear();
+    trackName = '';
 
     notifyListeners();
   }

@@ -24,6 +24,10 @@ class MyApp extends StatelessWidget {
           create: (context) => TrackDataProvider(),
           lazy: false, // Hace que se cree el Provider al construir la app
         ),
+        ChangeNotifierProvider<UIProvider>(
+          create: (context) => UIProvider(),
+          lazy: false, // Hace que se cree el Provider al construir la app
+        ),
       ],
       child: const MaterialApp(
         debugShowCheckedModeBanner: false,
