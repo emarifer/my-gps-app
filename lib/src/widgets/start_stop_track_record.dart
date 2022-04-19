@@ -15,31 +15,23 @@ class StartStopTrackRecord extends StatelessWidget {
     bool onOffTrackRecord =
         Provider.of<TrackDataProvider>(context).onOffTrackRecord;
 
-    return GestureDetector(
-      onDoubleTap: () {
-        Provider.of<GeolocatorProvider>(context, listen: false)
-            .moveMapToLocation();
-      },
-      child: FloatingActionButton.small(
-        tooltip: 'Iniciar/Detener Grabación de Track',
-        child: Icon(
-          onOffTrackRecord
-              ? Icons.radio_button_checked
-              : Icons.radio_button_unchecked,
-          color: Colors.white,
-        ),
-        backgroundColor: onOffTrackRecord
-            ? Colors.tealAccent.shade700
-            : Colors.amberAccent.shade700,
-        onPressed: () async {
-          await Permission.locationAlways.request();
-          await Permission.ignoreBatteryOptimizations.request();
-          Provider.of<TrackDataProvider>(context, listen: false)
-              .startRecordingPosition();
-          Provider.of<GeolocatorProvider>(context, listen: false)
-              .startStopGps();
-        },
+    return FloatingActionButton.small(
+      tooltip: 'Iniciar/Detener Grabación de Track',
+      child: Icon(
+        onOffTrackRecord
+            ? Icons.radio_button_checked
+            : Icons.radio_button_unchecked,
+        color: Colors.white,
       ),
+      backgroundColor: onOffTrackRecord
+          ? Colors.orangeAccent.shade700
+          : Colors.tealAccent.shade700,
+      onPressed: () async {
+        await Permission.locationAlways.request();
+        await Permission.ignoreBatteryOptimizations.request();
+        Provider.of<TrackDataProvider>(context, listen: false)
+            .startRecordingPosition();
+      },
     );
   }
 }

@@ -18,18 +18,18 @@ class CustomActions extends StatelessWidget {
     return Stack(
       children: [
         Positioned(
-          top: MediaQuery.of(context).size.height * 0.08,
+          top: 100,
           right: 0,
-          child: ElevatedButton(
+          child: IconButton(
             onPressed: () {
               Provider.of<UIProvider>(context, listen: false)
                   .showRightControls = !showRightControls;
             },
-            style:
-                ElevatedButton.styleFrom(primary: Colors.indigoAccent.shade100),
-            child: showRightControls
-                ? const Icon(Icons.chevron_right)
-                : const Icon(Icons.chevron_left),
+            icon: showRightControls
+                ? const Icon(Icons.arrow_forward_ios,
+                    color: Color(0xff0000ff), size: 35)
+                : const Icon(Icons.arrow_back_ios,
+                    color: Color(0xff0000ff), size: 35),
           ),
         ),
         showRightControls
@@ -57,18 +57,18 @@ class CustomActions extends StatelessWidget {
                 child: SizedBox(width: 0, height: 0),
               ),
         Positioned(
-          top: MediaQuery.of(context).size.height * 0.08,
+          top: 100,
           left: 30,
-          child: ElevatedButton(
+          child: IconButton(
             onPressed: () {
               Provider.of<UIProvider>(context, listen: false).showLeftControls =
                   !showLeftControls;
             },
-            style:
-                ElevatedButton.styleFrom(primary: Colors.indigoAccent.shade100),
-            child: showLeftControls
-                ? const Icon(Icons.chevron_left)
-                : const Icon(Icons.chevron_right),
+            icon: showLeftControls
+                ? const Icon(Icons.arrow_back_ios,
+                    color: Color(0xff0000ff), size: 35)
+                : const Icon(Icons.arrow_forward_ios,
+                    color: Color(0xff0000ff), size: 35),
           ),
         ),
         showLeftControls
@@ -78,6 +78,8 @@ class CustomActions extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: const <Widget>[
+                    ResetPosition(),
+                    SizedBox(height: 3),
                     StartStopTrackRecord(),
                   ],
                 ),
@@ -91,7 +93,3 @@ class CustomActions extends StatelessWidget {
     );
   }
 }
-
-/**
- * 
- */

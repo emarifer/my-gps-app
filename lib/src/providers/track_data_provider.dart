@@ -88,7 +88,7 @@ class TrackDataProvider extends ChangeNotifier {
       processTrackData(data);
       processWaypointsData(data);
       Future.delayed(const Duration(milliseconds: 300), () {
-        mapController.move(lineProvider[0], 16);
+        mapController.move(lineProvider[0], 18);
       });
       notifyListeners();
     }
@@ -107,17 +107,11 @@ class TrackDataProvider extends ChangeNotifier {
   }
 
   Future<void> startRecordingPosition() async {
-    List<LatLng> trackSegment = [];
-    List<LatLng> addPoints(Location location) {
-      trackSegment.add(LatLng(location.latitude!, location.longitude!));
-
-      notifyListeners();
-      return trackSegment;
-    }
+    List<Location> trackSegments = [];
 
     if (onOffTrackRecord) {
       BackgroundLocation.stopLocationService();
-      trackSegment.clear();
+      trackSegments.clear();
       onOffTrackRecord = false;
       notifyListeners();
     } else {
@@ -127,19 +121,37 @@ class TrackDataProvider extends ChangeNotifier {
         icon: '@mipmap/ic_launcher',
       );
 
-      await BackgroundLocation.startLocationService(distanceFilter: 5);
+      await BackgroundLocation.startLocationService(distanceFilter: 2);
 
       BackgroundLocation.getLocationUpdates((location) {
-        lines.add(
-          Polyline(
-            strokeWidth: 4.0,
-            color: Colors.redAccent,
-            points: addPoints(location),
-          ),
-        );
+        trackSegments.add(location);
+
+        if (trackSegments.length >= 2) {
+          List<LatLng> segment = [
+            LatLng(
+              trackSegments[trackSegments.length - 2].latitude!,
+              trackSegments[trackSegments.length - 2].longitude!,
+            ),
+            LatLng(location.latitude!, location.longitude!)
+          ];
+          lines.add(
+            Polyline(
+              strokeWidth: 4.0,
+              color: Colors.redAccent,
+              points: [...segment],
+            ),
+          );
+          notifyListeners();
+        }
       });
 
       onOffTrackRecord = true;
+    }
+  }
+
+  void resetPosition() {
+    if (lines.last.points.isNotEmpty) {
+      mapController.move(lines.last.points.last, 18);
       notifyListeners();
     }
   }
