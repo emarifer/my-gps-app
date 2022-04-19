@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'package:provider/provider.dart';
 
@@ -78,6 +79,10 @@ class CustomActions extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: const <Widget>[
+                    WriteGpx(),
+                    SizedBox(height: 3),
+                    LoadTrackFromDB(),
+                    SizedBox(height: 3),
                     ResetPosition(),
                     SizedBox(height: 3),
                     StartStopTrackRecord(),
@@ -90,6 +95,43 @@ class CustomActions extends StatelessWidget {
                 child: SizedBox(width: 0, height: 0),
               ),
       ],
+    );
+  }
+}
+
+class WriteGpx extends StatelessWidget {
+  const WriteGpx({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton.small(
+      tooltip: 'Guardar archivo GPX',
+      backgroundColor: Colors.yellowAccent.shade700,
+      child: const Icon(Icons.save, color: Colors.black),
+      onPressed: () async {
+        await Permission.manageExternalStorage.request();
+        Provider.of<TrackDataProvider>(context, listen: false).writeGpx();
+      },
+    );
+  }
+}
+
+class LoadTrackFromDB extends StatelessWidget {
+  const LoadTrackFromDB({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton.small(
+      tooltip: 'Cargar track desde la base de datos',
+      backgroundColor: Colors.black,
+      child: const Icon(Icons.account_tree),
+      onPressed: () async {
+        Provider.of<TrackDataProvider>(context, listen: false).loadTrack();
+      },
     );
   }
 }

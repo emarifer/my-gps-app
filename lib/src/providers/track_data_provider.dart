@@ -3,11 +3,14 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import 'package:background_location/background_location.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:gpx/gpx.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:background_location/background_location.dart';
+
+import '../models/track_model.dart';
+import 'providers.dart';
 
 class TrackDataProvider extends ChangeNotifier {
   final MapController mapController = MapController();
@@ -121,9 +124,11 @@ class TrackDataProvider extends ChangeNotifier {
         icon: '@mipmap/ic_launcher',
       );
 
-      await BackgroundLocation.startLocationService(distanceFilter: 2);
+      await BackgroundLocation.startLocationService(distanceFilter: 10);
 
       BackgroundLocation.getLocationUpdates((location) {
+        _addPointToDB(location);
+
         trackSegments.add(location);
 
         if (trackSegments.length >= 2) {
@@ -150,9 +155,92 @@ class TrackDataProvider extends ChangeNotifier {
   }
 
   void resetPosition() {
-    if (lines.last.points.isNotEmpty) {
+    if (lines.isNotEmpty && lines.last.points.isNotEmpty) {
       mapController.move(lines.last.points.last, 18);
       notifyListeners();
     }
   }
+
+  loadTrack() async {
+    final List<TrackModel> track = await DBProvider.db.getTrackFromDB();
+
+    if (track.isNotEmpty) {
+      List<LatLng> points = [];
+
+      for (var point in track) {
+        points.add(LatLng(point.latitude, point.longitude));
+      }
+
+      lines.add(
+        Polyline(
+          strokeWidth: 4.0,
+          color: Colors.blue.shade700,
+          points: [...points],
+        ),
+      );
+      notifyListeners();
+      points.clear();
+    }
+  }
+
+  void writeGpx() async {
+    final List<TrackModel> track = await DBProvider.db.getTrackFromDB();
+
+    if (track.isNotEmpty) {
+      List<Wpt> wpts = [];
+
+      for (var point in track) {
+        wpts.add(Wpt(
+          lat: point.latitude,
+          lon: point.longitude,
+          ele: point.altitude,
+          time: DateTime.parse(point.date),
+        ));
+      }
+
+      final Gpx gpx = Gpx();
+      gpx.creator = "my_gps_app";
+      final trk = Trk(trksegs: [Trkseg(trkpts: wpts)]);
+      gpx.trks = [trk];
+      gpx.metadata?.name = 'Un track de prueba';
+      gpx.metadata?.time = DateTime.now();
+      final String gpxString = GpxWriter().asString(gpx, pretty: true);
+
+      final dir = Directory('/storage/emulated/0/MyTracks');
+      await dir.create();
+
+      if (await dir.exists()) {
+        final File file = File(dir.path + '/my_file_gpx.gpx');
+        await file.writeAsString(gpxString);
+      } else {
+        await dir.create();
+        final File file = File(dir.path + '/my_file_gpx.gpx');
+        await file.writeAsString(gpxString);
+      }
+    }
+  }
+
+  void _addPointToDB(Location location) async {
+    final newPoint = TrackModel(
+      latitude: location.latitude!,
+      longitude: location.longitude!,
+      altitude: location.altitude!,
+      date: DateTime.now().toString(),
+    );
+
+    await DBProvider.db.newTrackPoint(newPoint);
+  }
 }
+
+/**
+ * how to save files and create folders in ‘storage/emulated/0/. VER:
+ * https://aimensayoud.medium.com/how-to-save-files-and-create-folders-in-storage-emulated-0-in-android-flutter-2-2-2acefc4a578b
+ * 
+ * Uso del permiso de almacenamiento en Flutter. VER: 
+ * https://mukhtharcm.com/storage-permission-in-flutter/
+ * 
+ * How To Create Folder in Local Storage/External Flutter? VER:
+ * https://stackoverflow.com/questions/59093733/how-to-create-folder-in-local-storage-external-flutter
+ * 
+ * 
+ */
