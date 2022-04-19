@@ -207,16 +207,13 @@ class TrackDataProvider extends ChangeNotifier {
       final String gpxString = GpxWriter().asString(gpx, pretty: true);
 
       final dir = Directory('/storage/emulated/0/MyTracks');
-      await dir.create();
 
-      if (await dir.exists()) {
-        final File file = File(dir.path + '/my_file_gpx.gpx');
-        await file.writeAsString(gpxString);
-      } else {
+      if (!dir.existsSync()) {
         await dir.create();
-        final File file = File(dir.path + '/my_file_gpx.gpx');
-        await file.writeAsString(gpxString);
       }
+
+      final File file = File(dir.path + '/my_file_gpx.gpx');
+      await file.writeAsString(gpxString);
     }
   }
 
@@ -241,6 +238,5 @@ class TrackDataProvider extends ChangeNotifier {
  * 
  * How To Create Folder in Local Storage/External Flutter? VER:
  * https://stackoverflow.com/questions/59093733/how-to-create-folder-in-local-storage-external-flutter
- * 
- * 
+ *  * 
  */
