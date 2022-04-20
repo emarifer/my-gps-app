@@ -18,7 +18,10 @@ class Utils {
     if (elevations.isNotEmpty && elevations[0] != null) {
       elevations.sort();
 
-      return ['${elevations.last} m', '${elevations.first} m'];
+      return [
+        '${elevations.last!.toStringAsFixed(2)} m',
+        '${elevations.first!.toStringAsFixed(2)} m'
+      ];
     }
     return null;
   }

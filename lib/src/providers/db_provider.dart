@@ -46,17 +46,7 @@ class DBProvider {
   }
 
   Future<int> newTrackPoint(TrackModel point) async {
-    // final double latitude = point.latitude;
-    // final double longitude = point.longitude;
-    // final double altitude = point.altitude;
-    // final String date = point.date;
-
-    // Verificar la DB
     final Database db = await database;
-
-    // final res = await db.rawInsert('''
-    //   INSERT INTO Track(latitude, longitude, altitude, date) VALUES($latitude, $longitude, $altitude, $date)
-    // ''');
 
     final res = await db.insert('Track', point.toJson());
 

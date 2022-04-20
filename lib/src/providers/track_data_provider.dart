@@ -24,6 +24,22 @@ class TrackDataProvider extends ChangeNotifier {
 
   bool onOffTrackRecord = false;
 
+  String _fileTrackName = '';
+
+  String get fileTrackName => _fileTrackName;
+
+  set fileTrackName(String value) {
+    _fileTrackName = value.replaceAll(' ', '-');
+
+    if (_fileTrackName.isEmpty) {
+      _fileTrackName = DateTime.now().toString().replaceAll(' ', '-');
+      _fileTrackName = _fileTrackName.replaceAll(':', '-');
+      _fileTrackName = _fileTrackName.split('.')[0];
+    }
+
+    notifyListeners();
+  }
+
   void processTrackData(String data) {
     final xmlGpx = GpxReader().fromString(data);
     trackName = xmlGpx.metadata?.name ?? '';
@@ -124,30 +140,29 @@ class TrackDataProvider extends ChangeNotifier {
         icon: '@mipmap/ic_launcher',
       );
 
-      await BackgroundLocation.startLocationService(distanceFilter: 10);
+      await BackgroundLocation.startLocationService(distanceFilter: 5);
 
       BackgroundLocation.getLocationUpdates((location) {
-        _addPointToDB(location);
-
         trackSegments.add(location);
 
-        if (trackSegments.length >= 2) {
-          List<LatLng> segment = [
-            LatLng(
-              trackSegments[trackSegments.length - 2].latitude!,
-              trackSegments[trackSegments.length - 2].longitude!,
-            ),
-            LatLng(location.latitude!, location.longitude!)
-          ];
-          lines.add(
-            Polyline(
-              strokeWidth: 4.0,
-              color: Colors.redAccent,
-              points: [...segment],
-            ),
-          );
-          notifyListeners();
+        _addPointToDB([..._removeDuplicates(trackSegments)].last);
+
+        List<LatLng> line = [];
+        for (var point in [..._removeDuplicates(trackSegments)]) {
+          line.add(LatLng(point.latitude!, point.longitude!));
         }
+
+        lines.add(
+          Polyline(
+            strokeWidth: 4.0,
+            color: Colors.redAccent,
+            points: [...line],
+          ),
+        );
+        lines.removeAt(lines.length - 2);
+        line.clear();
+
+        notifyListeners();
       });
 
       onOffTrackRecord = true;
@@ -198,12 +213,13 @@ class TrackDataProvider extends ChangeNotifier {
         ));
       }
 
-      final Gpx gpx = Gpx();
-      gpx.creator = "my_gps_app";
-      final trk = Trk(trksegs: [Trkseg(trkpts: wpts)]);
-      gpx.trks = [trk];
-      gpx.metadata?.name = 'Un track de prueba';
-      gpx.metadata?.time = DateTime.now();
+      final Gpx gpx = Gpx()
+        ..creator = 'my_gps_app'
+        ..metadata = Metadata(name: _fileTrackName, time: DateTime.now())
+        ..trks = [
+          Trk(trksegs: [Trkseg(trkpts: wpts)])
+        ];
+
       final String gpxString = GpxWriter().asString(gpx, pretty: true);
 
       final dir = Directory('/storage/emulated/0/MyTracks');
@@ -212,8 +228,13 @@ class TrackDataProvider extends ChangeNotifier {
         await dir.create();
       }
 
-      final File file = File(dir.path + '/my_file_gpx.gpx');
+      // print(_fileTrackName);
+
+      final File file = File(dir.path + '/$_fileTrackName.gpx');
       await file.writeAsString(gpxString);
+
+      // Borrar puntos del Track en la DB
+      await DBProvider.db.deleteTrack();
     }
   }
 
@@ -227,6 +248,21 @@ class TrackDataProvider extends ChangeNotifier {
 
     await DBProvider.db.newTrackPoint(newPoint);
   }
+
+  List<Location> _removeDuplicates(List<Location> value) {
+    List<Location> noRepeats = [];
+
+    for (int i = 0; i < value.length; i++) {
+      if (i < value.length - 1) {
+        if (value[i].latitude != value[i + 1].latitude) {
+          noRepeats.add(value[i]);
+        }
+      } else {
+        noRepeats.add(value[i]);
+      }
+    }
+    return noRepeats;
+  }
 }
 
 /**
@@ -238,5 +274,8 @@ class TrackDataProvider extends ChangeNotifier {
  * 
  * How To Create Folder in Local Storage/External Flutter? VER:
  * https://stackoverflow.com/questions/59093733/how-to-create-folder-in-local-storage-external-flutter
- *  * 
+ * 
+ * How to remove duplicates from list of objects in flutter. VER:
+ * https://stackoverflow.com/questions/70132374/how-to-remove-duplicates-from-list-of-objects-in-flutter
+ * 
  */
