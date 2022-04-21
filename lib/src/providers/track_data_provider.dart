@@ -140,7 +140,7 @@ class TrackDataProvider extends ChangeNotifier {
         icon: '@mipmap/ic_launcher',
       );
 
-      await BackgroundLocation.startLocationService(distanceFilter: 2);
+      await BackgroundLocation.startLocationService(distanceFilter: 5);
 
       BackgroundLocation.getLocationUpdates((location) {
         trackSegments.add(location);

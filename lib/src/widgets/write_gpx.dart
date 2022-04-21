@@ -82,11 +82,23 @@ class WriteGpx extends StatelessWidget {
                 ),
                 onPressed: () async {
                   Provider.of<TrackDataProvider>(context, listen: false).writeGpx();
+                  _showConfirmation(context);
                   Navigator.of(context).pop();
                 },
               ),
             ],
           );
         });
+  }
+
+  void _showConfirmation(BuildContext context) {
+    final snackBar = SnackBar(
+        content: const Text('Track guardado en la carpeta MyTracks'),
+        action: SnackBarAction(
+          label: 'Ok',
+          onPressed: () {},
+        ),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
+import '../models/track_model.dart';
 import '../providers/providers.dart';
 
 class StartStopTrackRecord extends StatelessWidget {
@@ -29,9 +30,33 @@ class StartStopTrackRecord extends StatelessWidget {
       onPressed: () async {
         await Permission.locationAlways.request();
         await Permission.ignoreBatteryOptimizations.request();
-        Provider.of<TrackDataProvider>(context, listen: false)
-            .startRecordingPosition();
+        if (!onOffTrackRecord) {
+          if (await _showWarning(context)) {
+            Provider.of<TrackDataProvider>(context, listen: false)
+                .startRecordingPosition();
+          }
+        } else {
+          Provider.of<TrackDataProvider>(context, listen: false)
+              .startRecordingPosition();
+        }
       },
     );
+  }
+
+  Future<bool> _showWarning(BuildContext context) async {
+    final List<TrackModel> track = await DBProvider.db.getTrackFromDB();
+
+    if (track.isNotEmpty) {
+      final snackBar = SnackBar(
+        content: const Text('¡El Track de la base de datos debe ser guardado!'),
+        action: SnackBarAction(
+          label: 'Ok',
+          onPressed: () {},
+        ),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      return false;
+    }
+    return true;
   }
 }
