@@ -161,7 +161,8 @@ class TrackDataProvider extends ChangeNotifier {
             points: [...line],
           ),
         );
-        if (lines.length >= 2) {
+        if (lines.length >= 2 &&
+            lines[lines.length - 2].color == Colors.redAccent) {
           lines.removeAt(lines.length - 2);
         }
         line.clear();
@@ -170,12 +171,13 @@ class TrackDataProvider extends ChangeNotifier {
 
         markers.add(
           Marker(
+            key: Key(DateTime.now().toString()),
             point: lines.last.points.last,
             builder: (_) =>
                 const Icon(Icons.navigation, color: Color(0xff0000ff)),
           ),
         );
-        if (markers.length >= 2) {
+        if (markers.length >= 2 && markers[markers.length - 2].key != null) {
           markers.removeAt(markers.length - 2);
         }
 
