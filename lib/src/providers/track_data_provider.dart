@@ -140,15 +140,17 @@ class TrackDataProvider extends ChangeNotifier {
         icon: '@mipmap/ic_launcher',
       );
 
-      await BackgroundLocation.startLocationService(distanceFilter: 5);
+      await BackgroundLocation.startLocationService(distanceFilter: 2);
 
       BackgroundLocation.getLocationUpdates((location) {
         trackSegments.add(location);
 
-        _addPointToDB([..._removeDuplicates(trackSegments)].last);
+        trackSegments = [..._removeDuplicates(trackSegments)];
+
+        _addPointToDB(trackSegments.last);
 
         List<LatLng> line = [];
-        for (var point in [..._removeDuplicates(trackSegments)]) {
+        for (var point in trackSegments) {
           line.add(LatLng(point.latitude!, point.longitude!));
         }
 
@@ -159,8 +161,23 @@ class TrackDataProvider extends ChangeNotifier {
             points: [...line],
           ),
         );
-        lines.removeAt(lines.length - 2);
+        if (lines.length >= 2) {
+          lines.removeAt(lines.length - 2);
+        }
         line.clear();
+
+        notifyListeners();
+
+        markers.add(
+          Marker(
+            point: lines.last.points.last,
+            builder: (_) =>
+                const Icon(Icons.navigation, color: Color(0xff0000ff)),
+          ),
+        );
+        if (markers.length >= 2) {
+          markers.removeAt(markers.length - 2);
+        }
 
         notifyListeners();
       });
@@ -249,19 +266,25 @@ class TrackDataProvider extends ChangeNotifier {
     await DBProvider.db.newTrackPoint(newPoint);
   }
 
-  List<Location> _removeDuplicates(List<Location> value) {
-    List<Location> noRepeats = [];
+  List<Location> _removeDuplicates(List<Location> values) {
+    // List<Location> noRepeats = [];
 
-    for (int i = 0; i < value.length; i++) {
-      if (i < value.length - 1) {
-        if (value[i].latitude != value[i + 1].latitude) {
-          noRepeats.add(value[i]);
-        }
-      } else {
-        noRepeats.add(value[i]);
+    // for (int i = 0; i < value.length; i++) {
+    //   if (i < value.length - 1) {
+    //     if (value[i].latitude != value[i + 1].latitude) {
+    //       noRepeats.add(value[i]);
+    //     }
+    //   } else {
+    //     noRepeats.add(value[i]);
+    //   }
+    // }
+
+    if (values.length >= 2) {
+      if (values[values.length - 2].latitude == values.last.latitude) {
+        values.removeLast();
       }
     }
-    return noRepeats;
+    return values;
   }
 }
 
