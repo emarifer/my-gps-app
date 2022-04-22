@@ -158,12 +158,12 @@ class TrackDataProvider extends ChangeNotifier {
         icon: '@mipmap/ic_launcher',
       );
 
-      await BackgroundLocation.startLocationService(distanceFilter: 8);
+      // Es necesario iniciar, detener y volver a arrancar el servicio
+      // por que solo en el primer inicio duplica las localizaciones
+      _stopAndRestartTheService();
 
       BackgroundLocation.getLocationUpdates((location) {
         trackSegments.add(location);
-
-        trackSegments = [..._removeDuplicates(trackSegments)];
 
         _addPointToDB(trackSegments.last);
         _lastLocation = trackSegments.last;
@@ -345,13 +345,16 @@ class TrackDataProvider extends ChangeNotifier {
     await DBProvider.db.newWaypoint(newWaypoint);
   }
 
-  List<Location> _removeDuplicates(List<Location> values) {
-    if (values.length >= 2) {
-      if (values[values.length - 2].latitude == values.last.latitude) {
-        values.removeLast();
-      }
-    }
-    return values;
+  void _stopAndRestartTheService() async {
+    await BackgroundLocation.startLocationService(distanceFilter: 10);
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      BackgroundLocation.stopLocationService();
+    });
+
+    Future.delayed(const Duration(milliseconds: 300), () async {
+      await BackgroundLocation.startLocationService(distanceFilter: 10);
+    });
   }
 
   void _showOneCursor() {
