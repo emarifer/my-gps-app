@@ -34,7 +34,7 @@ class CustomActions extends StatelessWidget {
         ),
         showRightControls
             ? Positioned(
-                bottom: 10,
+                bottom: 20,
                 right: 0,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -78,6 +78,8 @@ class CustomActions extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: const <Widget>[
+                    CreateWaypoint(),
+                    SizedBox(height: 3),
                     WriteGpx(),
                     SizedBox(height: 3),
                     CurrentWalkInfo(),

@@ -1,9 +1,11 @@
 import 'dart:io';
+
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../models/track_model.dart';
+import '../models/waypoint_model.dart';
 
 class DBProvider {
   static Database? _database;
@@ -41,6 +43,16 @@ class DBProvider {
             date TEXT
           )
         ''');
+        await db.execute('''
+          CREATE TABLE Waypoints(
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            name TEXT,
+            latitude REAL,
+            longitude REAL,
+            altitude REAL,
+            date TEXT
+          )
+        ''');
       },
     );
   }
@@ -49,6 +61,15 @@ class DBProvider {
     final Database db = await database;
 
     final res = await db.insert('Track', point.toJson());
+
+    // Retorna el ID del ultimo registro insertado en la DB
+    return res;
+  }
+
+  Future<int> newWaypoint(WaypointModel point) async {
+    final Database db = await database;
+
+    final res = await db.insert('Waypoints', point.toJson());
 
     // Retorna el ID del ultimo registro insertado en la DB
     return res;
@@ -65,12 +86,34 @@ class DBProvider {
         : [];
   }
 
+  Future<List<WaypointModel>> getWaypointsFromDB() async {
+    // Verificar la DB
+    final Database db = await database;
+
+    final res = await db.query('Waypoints');
+
+    return res.isNotEmpty
+        ? res.map((p) => WaypointModel.fromJson(p)).toList()
+        : [];
+  }
+
   Future<int> deleteTrack() async {
     // Verificar la DB
     final Database db = await database;
 
     final res = await db.rawDelete('''
       DELETE FROM Track
+    ''');
+
+    return res;
+  }
+
+  Future<int> deleteWaypoints() async {
+    // Verificar la DB
+    final Database db = await database;
+
+    final res = await db.rawDelete('''
+      DELETE FROM Waypoints
     ''');
 
     return res;

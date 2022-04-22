@@ -17,7 +17,10 @@ class WriteGpx extends StatelessWidget {
       child: const Icon(Icons.save, color: Colors.black),
       onPressed: () async {
         await Permission.manageExternalStorage.request();
-        _displayTextInputDialog(context);
+        final track = await DBProvider.db.getTrackFromDB();
+        if (track.isNotEmpty) {
+          _displayTextInputDialog(context);
+        }
       },
     );
   }
@@ -81,9 +84,15 @@ class WriteGpx extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 onPressed: () async {
-                  Provider.of<TrackDataProvider>(context, listen: false).writeGpx();
-                  _showConfirmation(context);
-                  Navigator.of(context).pop();
+                  final String fileTrackName =
+                      Provider.of<TrackDataProvider>(context, listen: false)
+                          .fileTrackName;
+                  if (fileTrackName.isNotEmpty) {
+                    Provider.of<TrackDataProvider>(context, listen: false)
+                        .writeGpx();
+                    _showConfirmation(context);
+                    Navigator.of(context).pop();
+                  }
                 },
               ),
             ],
@@ -93,12 +102,12 @@ class WriteGpx extends StatelessWidget {
 
   void _showConfirmation(BuildContext context) {
     final snackBar = SnackBar(
-        content: const Text('Track guardado en la carpeta MyTracks'),
-        action: SnackBarAction(
-          label: 'Ok',
-          onPressed: () {},
-        ),
-      );
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      content: const Text('Track guardado en la carpeta MyTracks'),
+      action: SnackBarAction(
+        label: 'Ok',
+        onPressed: () {},
+      ),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 }

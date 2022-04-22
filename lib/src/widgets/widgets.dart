@@ -1,5 +1,6 @@
 export 'package:my_gps_app/src/widgets/add_track_button.dart';
 export 'package:my_gps_app/src/widgets/clear_data_button.dart';
+export 'package:my_gps_app/src/widgets/create_waypoint.dart';
 export 'package:my_gps_app/src/widgets/current_walk_info.dart';
 export 'package:my_gps_app/src/widgets/custom_actions.dart';
 export 'package:my_gps_app/src/widgets/custom_layers_maps_widget.dart';

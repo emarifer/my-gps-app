@@ -28,6 +28,7 @@ class CurrentWalkInfo extends StatelessWidget {
     if (track.isNotEmpty) {
       List<LatLng> points = [];
       List<DateTime?> times = [];
+      final String altitude = '${track.last.altitude.toStringAsFixed(2)} m';
 
       for (var point in track) {
         points.add(LatLng(point.latitude, point.longitude));
@@ -52,6 +53,11 @@ class CurrentWalkInfo extends StatelessWidget {
               const SizedBox(height: 5),
               Text(
                 '• Tiempo desde el inicio: $duration',
+                style: const TextStyle(color: Colors.white),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                '• Altitud: $altitude',
                 style: const TextStyle(color: Colors.white),
               ),
             ],

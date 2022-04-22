@@ -10,6 +10,7 @@ import 'package:gpx/gpx.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../models/track_model.dart';
+import '../models/waypoint_model.dart';
 import 'providers.dart';
 
 class TrackDataProvider extends ChangeNotifier {
@@ -39,6 +40,22 @@ class TrackDataProvider extends ChangeNotifier {
 
     notifyListeners();
   }
+
+  String _waypointName = '';
+
+  String get waypointName => _waypointName;
+
+  set waypointName(String value) {
+    _waypointName = value;
+
+    if (_waypointName.isEmpty) {
+      _waypointName = DateTime.now().toString();
+    }
+
+    notifyListeners();
+  }
+
+  Location? _lastLocation;
 
   void processTrackData(String data) {
     final xmlGpx = GpxReader().fromString(data);
@@ -84,7 +101,7 @@ class TrackDataProvider extends ChangeNotifier {
           Marker(
             point: LatLng(wpt.lat!, wpt.lon!),
             builder: (_) => Tooltip(
-              message: '${wpt.name} (${wpt.ele} m)',
+              message: '${wpt.name} (${wpt.ele?.toStringAsFixed(2)} m)',
               child: const Icon(Icons.gps_fixed, color: Colors.red),
               showDuration: const Duration(seconds: 5),
             ),
@@ -140,7 +157,7 @@ class TrackDataProvider extends ChangeNotifier {
         icon: '@mipmap/ic_launcher',
       );
 
-      await BackgroundLocation.startLocationService(distanceFilter: 5);
+      await BackgroundLocation.startLocationService(distanceFilter: 8);
 
       BackgroundLocation.getLocationUpdates((location) {
         trackSegments.add(location);
@@ -148,6 +165,7 @@ class TrackDataProvider extends ChangeNotifier {
         trackSegments = [..._removeDuplicates(trackSegments)];
 
         _addPointToDB(trackSegments.last);
+        _lastLocation = trackSegments.last;
 
         List<LatLng> line = [];
         for (var point in trackSegments) {
@@ -177,14 +195,38 @@ class TrackDataProvider extends ChangeNotifier {
                 const Icon(Icons.navigation, color: Color(0xff0000ff)),
           ),
         );
-        if (markers.length >= 2 && markers[markers.length - 2].key != null) {
-          markers.removeAt(markers.length - 2);
-        }
+        // if (markers.length >= 2 && markers[markers.length - 2].key != null) {
+        //   markers.removeAt(markers.length - 2);
+        // }
+
+        // Removemos el penúltimo cursor para actualizar la posición
+        // pero no elinamos ninguno de los waypoints que el usuario
+        // haya ingresado o que estén en otro track que también se esté renderizanod
+        _showOneCursor();
 
         notifyListeners();
       });
 
       onOffTrackRecord = true;
+    }
+  }
+
+  Future<void> addUserPoiToMap() async {
+    if (_lastLocation != null && lines.last.color == Colors.redAccent) {
+      final LatLng point =
+          LatLng(_lastLocation!.latitude!, _lastLocation!.longitude!);
+
+      markers.insert(
+        0,
+        Marker(
+          point: point,
+          builder: (_) => Icon(Icons.stars, color: Colors.teal.shade600),
+        ),
+      );
+
+      await _addWaypointToDB();
+
+      notifyListeners();
     }
   }
 
@@ -195,33 +237,36 @@ class TrackDataProvider extends ChangeNotifier {
     }
   }
 
-  loadTrack() async {
-    final List<TrackModel> track = await DBProvider.db.getTrackFromDB();
+  // loadTrack() async {
+  //   final List<TrackModel> track = await DBProvider.db.getTrackFromDB();
 
-    if (track.isNotEmpty) {
-      List<LatLng> points = [];
+  //   if (track.isNotEmpty) {
+  //     List<LatLng> points = [];
 
-      for (var point in track) {
-        points.add(LatLng(point.latitude, point.longitude));
-      }
+  //     for (var point in track) {
+  //       points.add(LatLng(point.latitude, point.longitude));
+  //     }
 
-      lines.add(
-        Polyline(
-          strokeWidth: 4.0,
-          color: Colors.blue.shade700,
-          points: [...points],
-        ),
-      );
-      notifyListeners();
-      points.clear();
-    }
-  }
+  //     lines.add(
+  //       Polyline(
+  //         strokeWidth: 4.0,
+  //         color: Colors.blue.shade700,
+  //         points: [...points],
+  //       ),
+  //     );
+  //     notifyListeners();
+  //     points.clear();
+  //   }
+  // }
 
   void writeGpx() async {
     final List<TrackModel> track = await DBProvider.db.getTrackFromDB();
+    final List<WaypointModel> waypointsList =
+        await DBProvider.db.getWaypointsFromDB();
 
     if (track.isNotEmpty) {
       List<Wpt> wpts = [];
+      List<Wpt> userPOI = [];
 
       for (var point in track) {
         wpts.add(Wpt(
@@ -232,9 +277,22 @@ class TrackDataProvider extends ChangeNotifier {
         ));
       }
 
+      if (waypointsList.isNotEmpty) {
+        for (var wpt in waypointsList) {
+          userPOI.add(Wpt(
+            name: wpt.name,
+            lat: wpt.latitude,
+            lon: wpt.longitude,
+            ele: wpt.altitude,
+            time: DateTime.parse(wpt.date),
+          ));
+        }
+      }
+
       final Gpx gpx = Gpx()
         ..creator = 'my_gps_app'
         ..metadata = Metadata(name: _fileTrackName, time: DateTime.now())
+        ..wpts = userPOI
         ..trks = [
           Trk(trksegs: [Trkseg(trkpts: wpts)])
         ];
@@ -254,6 +312,12 @@ class TrackDataProvider extends ChangeNotifier {
 
       // Borrar puntos del Track en la DB
       await DBProvider.db.deleteTrack();
+
+      // Borrar waypoints en la DB
+      await DBProvider.db.deleteWaypoints();
+
+      // Limpiar fileTrackName
+      _fileTrackName = '';
     }
   }
 
@@ -268,25 +332,47 @@ class TrackDataProvider extends ChangeNotifier {
     await DBProvider.db.newTrackPoint(newPoint);
   }
 
+  Future<void> _addWaypointToDB() async {
+    final newWaypoint = WaypointModel(
+      name: _waypointName,
+      latitude: _lastLocation!.latitude!,
+      longitude: _lastLocation!.longitude!,
+      altitude: _lastLocation!.altitude!,
+      date: DateTime.now().toString(),
+    );
+
+    await DBProvider.db.newWaypoint(newWaypoint);
+  }
+
   List<Location> _removeDuplicates(List<Location> values) {
-    // List<Location> noRepeats = [];
-
-    // for (int i = 0; i < value.length; i++) {
-    //   if (i < value.length - 1) {
-    //     if (value[i].latitude != value[i + 1].latitude) {
-    //       noRepeats.add(value[i]);
-    //     }
-    //   } else {
-    //     noRepeats.add(value[i]);
-    //   }
-    // }
-
     if (values.length >= 2) {
       if (values[values.length - 2].latitude == values.last.latitude) {
         values.removeLast();
       }
     }
     return values;
+  }
+
+  void _showOneCursor() {
+    if (markers.length >= 2) {
+      Map<int, Marker> elements = markers.asMap();
+
+      Map<int, Marker> cursors = {};
+      elements.forEach((index, value) {
+        if (value.key != null) {
+          final cursor = <int, Marker>{index: value};
+          cursors.addEntries(cursor.entries);
+        }
+      });
+
+      List<int> cursorIndeces = cursors.keys.toList();
+      if (cursorIndeces.length > 1) {
+        cursorIndeces.sort();
+        int minIndex = cursorIndeces[0];
+
+        markers.removeAt(minIndex);
+      }
+    }
   }
 }
 
