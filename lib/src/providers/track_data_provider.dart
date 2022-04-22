@@ -149,6 +149,7 @@ class TrackDataProvider extends ChangeNotifier {
       BackgroundLocation.stopLocationService();
       trackSegments.clear();
       onOffTrackRecord = false;
+      _lastLocation = null;
       notifyListeners();
     } else {
       await BackgroundLocation.setAndroidNotification(
