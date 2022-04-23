@@ -112,8 +112,13 @@ class TrackDataProvider extends ChangeNotifier {
   }
 
   Future<void> addTrackToMap() async {
-    // Limpiamos los datos anteriores
-    // removeDataTrack();
+    // Limpiamos los datos anteriores para que
+    // la Info solo muestre los datos del track actual
+    elevations.clear();
+    lineProvider.clear();
+    times.clear();
+    trackName = '';
+
 
     FilePickerResult? result = await FilePicker.platform.pickFiles();
 
@@ -124,7 +129,7 @@ class TrackDataProvider extends ChangeNotifier {
       processTrackData(data);
       processWaypointsData(data);
       Future.delayed(const Duration(milliseconds: 300), () {
-        mapController.move(lineProvider[0], 18);
+        mapController.move(lineProvider[0], 14);
       });
       notifyListeners();
     }
@@ -202,7 +207,7 @@ class TrackDataProvider extends ChangeNotifier {
 
         // Removemos el penúltimo cursor para actualizar la posición
         // pero no elinamos ninguno de los waypoints que el usuario
-        // haya ingresado o que estén en otro track que también se esté renderizanod
+        // haya ingresado o que estén en otro track que también se esté renderizando
         _showOneCursor();
 
         notifyListeners();
@@ -233,7 +238,7 @@ class TrackDataProvider extends ChangeNotifier {
 
   void resetPosition() {
     if (lines.isNotEmpty && lines.last.points.isNotEmpty) {
-      mapController.move(lines.last.points.last, 18);
+      mapController.move(lines.last.points.last, 14);
       notifyListeners();
     }
   }
