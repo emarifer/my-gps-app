@@ -34,7 +34,7 @@ class CustomActions extends StatelessWidget {
                     : const Icon(Icons.arrow_forward_ios,
                         color: Color(0xff0000ff), size: 35),
               ),
-              SizedBox(height: sizeBoxHeight * 5),
+              SizedBox(height: sizeBoxHeight * 3.5),
               showLeftControls
                   ? Column(
                       children: const <Widget>[
@@ -65,7 +65,7 @@ class CustomActions extends StatelessWidget {
                     : const Icon(Icons.arrow_back_ios,
                         color: Color(0xff0000ff), size: 35),
               ),
-              SizedBox(height: sizeBoxHeight * 5),
+              SizedBox(height: sizeBoxHeight * 3.5),
               showRightControls
                   ? Column(
                       children: const <Widget>[

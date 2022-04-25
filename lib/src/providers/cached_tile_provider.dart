@@ -13,7 +13,7 @@ class CachedTileProvider extends TileProvider {
       getTileUrl(coords, options),
       // cacheKey: 'maps',
       cacheManager: CacheManager(
-        Config('maps', maxNrOfCacheObjects: 300),
+        Config('maps', maxNrOfCacheObjects: 500),
       ),
       //Now you can set options that determine how the image gets cached via whichever plugin you use.
     );
