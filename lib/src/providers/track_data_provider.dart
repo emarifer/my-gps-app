@@ -351,14 +351,14 @@ class TrackDataProvider extends ChangeNotifier {
   }
 
   void _stopAndRestartTheService() async {
-    await BackgroundLocation.startLocationService(distanceFilter: 10);
+    await BackgroundLocation.startLocationService(distanceFilter: 20);
 
     Future.delayed(const Duration(milliseconds: 300), () {
       BackgroundLocation.stopLocationService();
     });
 
     Future.delayed(const Duration(milliseconds: 300), () async {
-      await BackgroundLocation.startLocationService(distanceFilter: 10);
+      await BackgroundLocation.startLocationService(distanceFilter: 20);
     });
   }
 

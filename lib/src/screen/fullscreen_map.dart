@@ -49,6 +49,12 @@ class FullScreenMap extends StatelessWidget {
         ],
       ),
       floatingActionButton: const CustomActions(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerTop,
     );
   }
 }
+
+/**
+ * Flutter - FloatingActionButton in the center. VER:
+ * https://stackoverflow.com/questions/44713501/flutter-floatingactionbutton-in-the-center
+ */
